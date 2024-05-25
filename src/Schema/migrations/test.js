@@ -1,4 +1,4 @@
-import { createTable, addColumns, unsafeExecuteSql, schemaMigrations } from './index'
+import { createTable, addColumns, destroyColumn, schemaMigrations } from './index'
 import { stepsForMigration } from './stepsForMigration'
 
 describe('schemaMigrations()', () => {
@@ -30,7 +30,19 @@ describe('schemaMigrations()', () => {
   it('returns a complex schema migrations spec', () => {
     const migrations = schemaMigrations({
       migrations: [
-        { toVersion: 4, steps: [] },
+        {
+          toVersion: 4,
+          steps: [
+            addColumns({
+              table: 'comments',
+              columns: [{ name: 'text', type: 'string' }],
+            }),
+            destroyColumn({
+              table: 'comments',
+              column: 'body',
+            }),
+          ],
+        },
         {
           toVersion: 3,
           steps: [
@@ -103,7 +115,21 @@ describe('schemaMigrations()', () => {
             },
           ],
         },
-        { toVersion: 4, steps: [] },
+        {
+          toVersion: 4,
+          steps: [
+            {
+              type: 'add_columns',
+              table: 'comments',
+              columns: [{ name: 'text', type: 'string' }],
+            },
+            {
+              type: 'destroy_column',
+              table: 'comments',
+              column: 'body',
+            },
+          ],
+        },
       ],
     })
   })
@@ -181,10 +207,9 @@ describe('migration step functions', () => {
       'type',
     )
   })
-  it('throws if unsafeExecuteSql() is malformed', () => {
-    expect(() => unsafeExecuteSql()).toThrow('not a string')
-    expect(() => unsafeExecuteSql('delete from table_a')).toThrow('semicolon')
-    expect(() => unsafeExecuteSql('delete from table_a;')).not.toThrow()
+  it('throws if destroyColumn() is malformed', () => {
+    expect(() => destroyColumn({ column: 'foo' })).toThrow('table')
+    expect(() => destroyColumn({ table: 'foo' })).toThrow('column')
   })
 })
 

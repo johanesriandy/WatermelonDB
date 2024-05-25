@@ -9,6 +9,7 @@
 ### New features
 
 - Added `Database#experimentalIsVerbose` option
+- Added destroyColumn migration step
 
 ### Fixes
 
