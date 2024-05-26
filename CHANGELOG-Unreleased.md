@@ -11,6 +11,7 @@
 - Added `Database#experimentalIsVerbose` option
 - Added destroyColumn migration step
 - Added renameColumn migration step
+- Added destroyTable migration step
 
 ### Fixes
 
