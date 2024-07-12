@@ -193,6 +193,7 @@ export function addColumns({
   return { type: 'add_columns', table, columns, unsafeSql }
 }
 
+/** Requires sqlite 3.35.0 (iOS 15 / Android 14) */
 export function destroyColumn({
   table,
   column,
