@@ -8,6 +8,10 @@ import type {
   DestroyColumnMigrationStep,
   RenameColumnMigrationStep,
   DestroyTableMigrationStep,
+  MakeColumnOptionalMigrationStep,
+  MakeColumnRequiredMigrationStep,
+  AddColumnIndexMigrationStep,
+  RemoveColumnIndexMigrationStep,
 } from '../../../Schema/migrations'
 import type { SQL } from '../index'
 
@@ -111,6 +115,38 @@ const encodeRenameColumnMigrationStep: (RenameColumnMigrationStep) => SQL = ({
   return (unsafeSql || identity)(`alter table "${table}" rename column "${from}" to "${to}";`)
 }
 
+const encodeMakeColumnOptionalMigrationStep: (MakeColumnOptionalMigrationStep) => SQL = ({
+  unsafeSql,
+}) => {
+  // The column created in schema is not adding the column constraint for `NOT NULL`
+  // there no further action to perform to add NULLABILITY for column that required before.
+  return (unsafeSql || identity)("")
+}
+const encodeMakeColumnRequiredMigrationStep: (MakeColumnRequiredMigrationStep) => SQL = ({
+  table,
+  column,
+  defaultValue,
+  unsafeSql,
+}) => {
+  return (unsafeSql || identity)(`update "${table}" set "${column}" = ${encodeValue(defaultValue)} where "${column}" = NULL;`)
+}
+
+const encodeAddColumnIndexMigrationStep: (AddColumnIndexMigrationStep) => SQL = ({
+  table,
+  column,
+  unsafeSql
+}) => {
+  return (unsafeSql || identity)(`create index if not exists "${table}_${column}" on "${table}" ("${column}");`)
+}
+
+const encodeRemoveColumnIndexMigrationStep: (RemoveColumnIndexMigrationStep) => SQL = ({
+  table,
+  column,
+  unsafeSql
+}) => {
+  return (unsafeSql || identity)(`drop index if exists "${table}_${column}";`)
+}
+
 const encodeDestroyTableMigrationStep: (DestroyTableMigrationStep) => SQL = ({
   table,
   unsafeSql,
@@ -129,6 +165,14 @@ export const encodeMigrationSteps: (MigrationStep[]) => SQL = (steps) =>
         return encodeDestroyColumnMigrationStep(step)
       } else if (step.type === 'rename_column') {
         return encodeRenameColumnMigrationStep(step)
+      } else if (step.type === 'make_column_optional') {
+        return encodeMakeColumnOptionalMigrationStep(step)
+      } else if (step.type === 'make_column_required') {
+        return encodeMakeColumnRequiredMigrationStep(step)
+      } else if (step.type === 'add_column_index') {
+        return encodeAddColumnIndexMigrationStep(step)
+      } else if (step.type === 'remove_column_index') {
+        return encodeRemoveColumnIndexMigrationStep(step)
       } else if (step.type === 'destroy_table') {
         return encodeDestroyTableMigrationStep(step)
       } else if (step.type === 'sql') {

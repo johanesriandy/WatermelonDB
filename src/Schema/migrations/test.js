@@ -5,6 +5,8 @@ import {
   renameColumn,
   schemaMigrations,
   destroyTable,
+  makeColumnOptional,
+  makeColumnRequired,
 } from './index'
 import { stepsForMigration } from './stepsForMigration'
 
@@ -37,6 +39,7 @@ describe('schemaMigrations()', () => {
   it('returns a complex schema migrations spec', () => {
     const migrations = schemaMigrations({
       migrations: [
+        { toVersion: 7, steps: [makeColumnOptional({ table: 'comments', column: 'body'}), makeColumnRequired({ table: 'comments', column: 'body', defaultValue: ''})]},
         { toVersion: 6, steps: [destroyTable({ table: 'comments' })] },
         {
           toVersion: 5,
@@ -88,7 +91,7 @@ describe('schemaMigrations()', () => {
     expect(migrations).toEqual({
       validated: true,
       minVersion: 1,
-      maxVersion: 6,
+      maxVersion: 7,
       sortedMigrations: [
         {
           toVersion: 2,
@@ -159,6 +162,22 @@ describe('schemaMigrations()', () => {
             {
               type: 'destroy_table',
               table: 'comments',
+            },
+          ],
+        },
+        {
+          toVersion: 7,
+          steps: [
+            {
+              type: 'make_column_optional',
+              table: 'comments',
+              column: 'body',
+            },
+            {
+              type: 'make_column_required',
+              table: 'comments',
+              column: 'body',
+              defaultValue: '',
             },
           ],
         },

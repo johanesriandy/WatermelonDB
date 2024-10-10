@@ -15,6 +15,7 @@ import type {
   SchemaVersion,
 } from '../index'
 import { tableSchema, validateName, validateColumnSchema } from '../index'
+import type { NonNullValue } from "../../QueryDescription/type"
 
 export type CreateTableMigrationStep = $RE<{
   type: 'create_table',
@@ -49,6 +50,35 @@ export type DestroyTableMigrationStep = $RE<{
   unsafeSql?: (string) => string,
 }>
 
+export type MakeColumnOptionalMigrationStep = $RE<{
+  type: 'make_column_optional',
+  table: TableName<any>,
+  column: ColumnName,
+  unsafeSql?: (string) => string,
+}>
+
+export type MakeColumnRequiredMigrationStep = $RE<{
+  type: 'make_column_required',
+  table: TableName<any>,
+  column: ColumnName,
+  defaultValue: NonNullValue,
+  unsafeSql?: (string) => string,
+}>
+
+export type AddColumnIndexMigrationStep = $RE<{
+  type: 'add_column_index',
+  table: TableName<any>,
+  column: ColumnName,
+  unsafeSql?: (string) => string,
+}>
+
+export type RemoveColumnIndexMigrationStep = $RE<{
+  type: 'remove_column_index',
+  table: TableName<any>,
+  column: ColumnName,
+  unsafeSql?: (string) => string,
+}>
+
 export type SqlMigrationStep = $RE<{
   type: 'sql',
   sql: string,
@@ -60,6 +90,10 @@ export type MigrationStep =
   | SqlMigrationStep
   | DestroyColumnMigrationStep
   | RenameColumnMigrationStep
+  | MakeColumnOptionalMigrationStep
+  | MakeColumnRequiredMigrationStep
+  | AddColumnIndexMigrationStep
+  | RemoveColumnIndexMigrationStep
   | DestroyTableMigrationStep
 
 type Migration = $RE<{
@@ -242,6 +276,64 @@ export function renameColumn({
   return { type: 'rename_column', table, from, to, unsafeSql }
 }
 
+export function makeColumnOptional({
+  table,
+  column,
+  unsafeSql,
+}: $Exact<{
+  table: TableName<any>,
+  column: ColumnName,
+  unsafeSql?: (string) => string,
+}>): MakeColumnOptionalMigrationStep {
+  if (process.env.NODE_ENV !== 'production') {
+    invariant(table, `Missing table name in makeColumnOptional()`)
+    invariant(column, `Missing 'column' in makeColumnOptional()`)
+  }
+  return { type: 'make_column_optional', table, column, unsafeSql }
+}
+export function makeColumnRequired({
+  table,
+  column,
+  defaultValue,
+  unsafeSql,
+}: $Exact<{
+  table: TableName<any>,
+  column: ColumnName,
+  defaultValue: any,
+  unsafeSql: (string) => string,
+}>): MakeColumnRequiredMigrationStep {
+  if (process.env.NODE_ENV !== 'production') {
+    invariant(table, `Missing table name in makeColumnRequired()`)
+    invariant(column, `Missing 'column' in makeColumnRequired()`)
+    invariant(defaultValue, `Missing 'defaultValue' in makeColumnRequired()`)
+  }
+  return { type: 'make_column_required', table, column, defaultValue, unsafeSql }
+}
+
+export function addColumnIndex({ table, column, unsafeSql}: $Exact<{
+  table: TableName<any>,
+  column: ColumnName,
+  unsafeSql?: (string) => string,
+}>): AddColumnIndexMigrationStep {
+  if (process.env.NODE_ENV !== 'production') {
+    invariant(table, `Missing table name in addColumnIndex()`)
+    invariant(column, `Missing 'column' in addColumnIndex()`)
+  }
+  return { type: 'add_column_index', table, column, unsafeSql }
+}
+
+export function removeColumnIndex({ table, column, unsafeSql }: $Exact<{
+  table: TableName<any>,
+  column: ColumnName,
+  unsafeSql?: (string) => string,
+}>): RemoveColumnIndexMigrationStep {
+  if (process.env.NODE_ENV !== 'production') {
+    invariant(table, `Missing table name in removeColumnIndex()`)
+    invariant(column, `Missing 'column' in removeColumnIndex()`)
+  }
+  return { type: 'remove_column_index', table, column, unsafeSql }
+}
+
 export function destroyTable({
   table,
   unsafeSql,
@@ -254,13 +346,6 @@ export function destroyTable({
   }
 
   return { type: 'destroy_table', table, unsafeSql }
-}
-
-export function unsafeExecuteSql(sql: string): SqlMigrationStep {
-  if (process.env.NODE_ENV !== 'production') {
-    invariant(typeof sql === 'string', `SQL passed to unsafeExecuteSql is not a string`)
-  }
-  return { type: 'sql', sql }
 }
 
 /*

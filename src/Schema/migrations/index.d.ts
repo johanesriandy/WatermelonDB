@@ -1,3 +1,4 @@
+import { NonNullValue } from '../../QueryDescription'
 import type { $RE, $Exact } from '../../types'
 import type {
   ColumnName,
@@ -41,6 +42,35 @@ export type DestroyTableMigrationStep = $RE<{
   unsafeSql?: (_: string) => string
 }>
 
+export type MakeColumnOptionalMigrationStep = $RE<{
+  type: 'make_column_optional',
+  table: TableName<any>,
+  column: ColumnName,
+  unsafeSql?: (string) => string,
+}>
+
+export type MakeColumnRequiredMigrationStep = $RE<{
+  type: 'make_column_required',
+  table: TableName<any>,
+  column: ColumnName,
+  defaultValue: NonNullValue,
+  unsafeSql?: (string) => string,
+}>
+
+export type AddColumnIndexMigrationStep = $RE<{
+  type: 'add_column_index',
+  table: TableName<any>,
+  column: ColumnName,
+  unsafeSql?: (string) => string,
+}>
+
+export type RemoveColumnIndexMigrationStep = $RE<{
+  type: 'remove_column_index',
+  table: TableName<any>,
+  column: ColumnName,
+  unsafeSql?: (string) => string,
+}>
+
 export type SqlMigrationStep = $RE<{
   type: 'sql'
   sql: string
@@ -52,6 +82,10 @@ export type MigrationStep =
   | SqlMigrationStep
   | DestroyColumnMigrationStep
   | RenameColumnMigrationStep
+  | MakeColumnOptionalMigrationStep
+  | MakeColumnRequiredMigrationStep
+  | AddColumnIndexMigrationStep
+  | RemoveColumnIndexMigrationStep
   | DestroyTableMigrationStep
 
 type Migration = $RE<{
@@ -107,6 +141,40 @@ export function renameColumn({
   to: string
   unsafeSql?: (_: string) => string
 }>): RenameColumnMigrationStep
+
+export function makeColumnOptional({
+  table,
+  column,
+  unsafeSql,
+}: $Exact<{
+  table: TableName<any>,
+  column: ColumnName,
+  unsafeSql?: (string) => string,
+}>): MakeColumnOptionalMigrationStep
+
+export function makeColumnRequired({
+  table,
+  column,
+  defaultValue,
+  unsafeSql,
+}: $Exact<{
+  table: TableName<any>,
+  column: ColumnName,
+  defaultValue: any,
+  unsafeSql?: (string) => string,
+}>): MakeColumnRequiredMigrationStep
+
+export function addColumnIndex({ table, column, unsafeSql}: $Exact<{
+  table: TableName<any>,
+  column: ColumnName,
+  unsafeSql?: (string) => string,
+}>): AddColumnIndexMigrationStep
+
+export function removeColumnIndex({ table, column, unsafeSql }: $Exact<{
+  table: TableName<any>,
+  column: ColumnName,
+  unsafeSql?: (string) => string,
+}>): RemoveColumnIndexMigrationStep
 
 export function destroyTable({
   table,
